@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
-namespace VacationRental.Api.Tests
+namespace VacationRental.SystemTests
 {
     [CollectionDefinition("Integration")]
     public class HttpClientFixture : IDisposable

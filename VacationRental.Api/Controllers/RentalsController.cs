@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using VacationRental.Api.Models;
+using VacationRental.Application.CQRS.Commands.Rental;
+using VacationRental.Application.CQRS.Queries.Rental;
+using VacationRental.Application.Models;
 
 namespace VacationRental.Api.Controllers
 {
@@ -9,35 +10,28 @@ namespace VacationRental.Api.Controllers
     [ApiController]
     public class RentalsController : ControllerBase
     {
-        private readonly IDictionary<int, RentalViewModel> _rentals;
+        private readonly IMediator _mediator;
 
-        public RentalsController(IDictionary<int, RentalViewModel> rentals)
+        public RentalsController(IMediator mediator)
         {
-            _rentals = rentals;
+            _mediator = mediator;
         }
 
         [HttpGet]
         [Route("{rentalId:int}")]
-        public RentalViewModel Get(int rentalId)
+        public async Task<ActionResult<RentalDto>> GetAsync(int rentalId)
         {
-            if (!_rentals.ContainsKey(rentalId))
-                throw new ApplicationException("Rental not found");
+            var query = new GetRentalQuery(rentalId);
+            var queryResult = await _mediator.Send(query);
 
-            return _rentals[rentalId];
+            return queryResult == null ? NotFound("Rental not found") : Ok(queryResult);
         }
 
         [HttpPost]
-        public ResourceIdViewModel Post(RentalBindingModel model)
+        public async Task<ActionResult<ResourceIdDto>> PostAsync(RentalBindingModel model)
         {
-            var key = new ResourceIdViewModel { Id = _rentals.Keys.Count + 1 };
-
-            _rentals.Add(key.Id, new RentalViewModel
-            {
-                Id = key.Id,
-                Units = model.Units
-            });
-
-            return key;
+            var createCommand = new AddRentalCommand(model.Units);
+            return Ok(await _mediator.Send(createCommand));
         }
     }
 }

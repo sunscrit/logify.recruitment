@@ -1,6 +1,6 @@
 ﻿using Xunit;
 
-namespace VacationRental.Api.Tests
+namespace VacationRental.SystemTests
 {
     [CollectionDefinition("Integration")]
     public class HttpClientCollection : ICollectionFixture<HttpClientFixture> { }
