@@ -10,12 +10,14 @@ namespace VacationRental.Application.CQRS.Commands.Booking
         public int RentalId { get; set; }
         public int Nights { get; set; }
         public DateTime Start { get; set; }
+        public int Unit { get; set; }
 
-        public AddBookingCommand(int rentalId, int nights, DateTime start)
+        public AddBookingCommand(int rentalId, int nights, DateTime start, int unit)
         {
             RentalId = rentalId;
             Nights = nights;
             Start = start;
+            Unit = unit;
         }
     }
 
@@ -35,6 +37,7 @@ namespace VacationRental.Application.CQRS.Commands.Booking
                 RentalId = command.RentalId,
                 Nights = command.Nights,
                 Start = command.Start,
+                Unit = command.Unit,
             });
             return new ResourceIdDto { Id = booking.Id };
         }

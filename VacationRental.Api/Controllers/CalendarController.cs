@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VacationRental.Application.CQRS.Queries.Booking;
 using VacationRental.Application.CQRS.Queries.Rental;
+using VacationRental.Application.Models.Booking;
 using VacationRental.Application.Models.Calendar;
 
 namespace VacationRental.Api.Controllers
@@ -40,7 +41,7 @@ namespace VacationRental.Api.Controllers
                 Dates = new List<CalendarDateViewModel>()
             };
 
-            var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id);
+            var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id, start, start.AddDays(nights + rental.PreparationTimeInDays), rental.PreparationTimeInDays);
             var bookingsForRental = await _mediator.Send(getBookingsForRentalQuery);
 
             var preparationTimeInDays = rental.PreparationTimeInDays;
@@ -58,7 +59,8 @@ namespace VacationRental.Api.Controllers
                 {
                     var bookingEnd = booking.Start.AddDays(booking.Nights);
                     var preparationEnd = booking.Start.AddDays(booking.Nights + preparationTimeInDays);
-                    var unitId = booking.Id % rental.Units + 1;
+                    var unitId = booking.Unit;
+
                     if (booking.Start <= date.Date && bookingEnd > date.Date)
                     {
                         date.Bookings.Add(new CalendarBookingViewModel { Id = booking.Id, Unit = unitId });

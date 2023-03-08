@@ -5,6 +5,7 @@ using VacationRental.Application.CQRS.Queries.Booking;
 using VacationRental.Application.CQRS.Queries.Rental;
 using VacationRental.Application.Models;
 using VacationRental.Application.Models.Booking;
+using VacationRental.Application.Models.Rental;
 
 namespace VacationRental.Api.Controllers
 {
@@ -45,30 +46,24 @@ namespace VacationRental.Api.Controllers
                 return NotFound("Rental not found");
             }
 
-            var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id);
+            var modelEnd = model.Start.AddDays(model.Nights + rental.PreparationTimeInDays);
+
+            var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id, model.Start, modelEnd, rental.PreparationTimeInDays);
             var bookingsForRental = await _mediator.Send(getBookingsForRentalQuery);
 
-            for (var i = 0; i < model.Nights; i++)
+            if (bookingsForRental.Count >= rental.Units)
             {
-                var count = 0;
-                foreach (var booking in bookingsForRental)
-                {
-                    var totalOccupancyDays = booking.Nights + rental.PreparationTimeInDays;
-                    if ((booking.Start <= model.Start.Date && booking.Start.AddDays(totalOccupancyDays) > model.Start.Date)
-                        || (booking.Start < model.Start.AddDays(model.Nights + rental.PreparationTimeInDays) && booking.Start.AddDays(totalOccupancyDays) >= model.Start.AddDays(model.Nights))
-                        || (booking.Start > model.Start && booking.Start.AddDays(totalOccupancyDays) < model.Start.AddDays(model.Nights + rental.PreparationTimeInDays)))
-                    {
-                        count++;
-                    }
-                }
-                if (count >= rental.Units)
-                {
-                    return Conflict("Not available");
-                }
+                return Conflict("Not available");
             }
 
-            var addBookingCommand = new AddBookingCommand(model.RentalId, model.Nights, model.Start.Date);
+            var addBookingCommand = new AddBookingCommand(model.RentalId, model.Nights, model.Start.Date, AvaliableUnitId(bookingsForRental, rental));
             return Ok(await _mediator.Send(addBookingCommand));
+        }
+
+        private static int AvaliableUnitId(IReadOnlyList<BookingDto> bookingsForRental, RentalDto rental)
+        {
+            var bookedUnits = bookingsForRental.Select(x => x.Unit).ToList();
+            return Enumerable.Range(1, rental.Units).Except(bookedUnits).FirstOrDefault();
         }
     }
 }

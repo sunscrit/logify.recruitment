@@ -10,10 +10,10 @@ namespace VacationRental.Application.CQRS.Commands.Rental
         public int Units { get; set; }
         public int PreparationTimeInDays { get; set; }
 
-        public AddRentalCommand(int units, int preparetionTimeInDays)
+        public AddRentalCommand(int units, int preparationTimeInDays)
         {
             Units = units;
-            PreparationTimeInDays = preparetionTimeInDays;
+            PreparationTimeInDays = preparationTimeInDays;
         }
     }
 
