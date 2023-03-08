@@ -1,4 +1,4 @@
-﻿namespace VacationRental.Application.Models
+﻿namespace VacationRental.Application.Models.Booking
 {
     public record BookingDto
     {

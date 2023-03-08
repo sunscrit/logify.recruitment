@@ -4,6 +4,7 @@ using VacationRental.Application.CQRS.Commands.Booking;
 using VacationRental.Application.CQRS.Queries.Booking;
 using VacationRental.Application.CQRS.Queries.Rental;
 using VacationRental.Application.Models;
+using VacationRental.Application.Models.Booking;
 
 namespace VacationRental.Api.Controllers
 {
@@ -29,7 +30,7 @@ namespace VacationRental.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ResourceIdDto>> PostAsync(BookingBindingModel model)
+        public async Task<ActionResult<ResourceIdDto>> PostAsync(BookingRequest model)
         {
             if (model.Nights <= 0)
             {
@@ -47,19 +48,15 @@ namespace VacationRental.Api.Controllers
             var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id);
             var bookingsForRental = await _mediator.Send(getBookingsForRentalQuery);
 
-            //if (!IsAvailable(bookingsForRental, startDate, endDate, rental.Units))
-            //{
-            //    return Conflict("Not available");
-            //}
-
             for (var i = 0; i < model.Nights; i++)
             {
                 var count = 0;
                 foreach (var booking in bookingsForRental)
                 {
-                    if ((booking.Start <= model.Start.Date && booking.Start.AddDays(booking.Nights) > model.Start.Date)
-                        || (booking.Start < model.Start.AddDays(model.Nights) && booking.Start.AddDays(booking.Nights) >= model.Start.AddDays(model.Nights))
-                        || (booking.Start > model.Start && booking.Start.AddDays(booking.Nights) < model.Start.AddDays(model.Nights)))
+                    var totalOccupancyDays = booking.Nights + rental.PreparationTimeInDays;
+                    if ((booking.Start <= model.Start.Date && booking.Start.AddDays(totalOccupancyDays) > model.Start.Date)
+                        || (booking.Start < model.Start.AddDays(model.Nights + rental.PreparationTimeInDays) && booking.Start.AddDays(totalOccupancyDays) >= model.Start.AddDays(model.Nights))
+                        || (booking.Start > model.Start && booking.Start.AddDays(totalOccupancyDays) < model.Start.AddDays(model.Nights + rental.PreparationTimeInDays)))
                     {
                         count++;
                     }
@@ -73,25 +70,5 @@ namespace VacationRental.Api.Controllers
             var addBookingCommand = new AddBookingCommand(model.RentalId, model.Nights, model.Start.Date);
             return Ok(await _mediator.Send(addBookingCommand));
         }
-
-        private bool IsAvailable(IEnumerable<BookingDto> bookings, DateTime startDate, DateTime endDate, int units)
-        {
-            var count = 0;
-            foreach (var booking in bookings)
-            {
-                if (booking.Start <= startDate && booking.Start.AddDays(booking.Nights) > startDate
-                    || booking.Start < endDate && booking.Start.AddDays(booking.Nights) >= endDate
-                    || booking.Start > startDate && booking.Start.AddDays(booking.Nights) < endDate)
-                {
-                    count++;
-                }
-                if (count >= units)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
     }
 }

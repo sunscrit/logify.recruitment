@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using VacationRental.Application.CQRS.Commands.Rental;
 using VacationRental.Application.CQRS.Queries.Rental;
 using VacationRental.Application.Models;
+using VacationRental.Application.Models.Rental;
 
 namespace VacationRental.Api.Controllers
 {
@@ -28,9 +29,9 @@ namespace VacationRental.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ResourceIdDto>> PostAsync(RentalBindingModel model)
+        public async Task<ActionResult<ResourceIdDto>> PostAsync(RentalRequest model)
         {
-            var createCommand = new AddRentalCommand(model.Units);
+            var createCommand = new AddRentalCommand(model.Units, model.PreparationTimeInDays);
             return Ok(await _mediator.Send(createCommand));
         }
     }

@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System.Net.Http.Json;
 using VacationRental.Application.Models;
+using VacationRental.Application.Models.Booking;
+using VacationRental.Application.Models.Rental;
 using VacationRental.Domain.Entities;
 using Xunit;
 
@@ -9,29 +11,21 @@ namespace VacationRental.SystemTests
     [Collection("Integration")]
     public class BookingTests
     {
+        private readonly HttpClientFixture _fixture;
         private readonly HttpClient _client;
 
         public BookingTests(HttpClientFixture fixture)
         {
+            _fixture = fixture;
             _client = fixture.Client;
         }
 
         [Fact]
         public async Task GivenCompleteRequest_WhenPostBooking_ThenAGetReturnsTheCreatedBooking()
         {
-            var postRentalRequest = new RentalBindingModel
-            {
-                Units = 4
-            };
+            var postRentalResult = await _fixture.CreateRental(units: 4, preparationTimeInDays: 1);
 
-            ResourceIdDto postRentalResult;
-            using (var postRentalResponse = await _client.PostAsJsonAsync($"/api/v1/rentals", postRentalRequest))
-            {
-                Assert.True(postRentalResponse.IsSuccessStatusCode);
-                postRentalResult = await postRentalResponse.Content.ReadFromJsonAsync<ResourceIdDto>();
-            }
-
-            var postBookingRequest = new BookingBindingModel
+            var postBookingRequest = new BookingRequest
             {
                 RentalId = postRentalResult.Id,
                 Nights = 3,
@@ -60,19 +54,9 @@ namespace VacationRental.SystemTests
         [Fact]
         public async Task GivenCompleteRequest_WhenPostBooking_ThenAPostReturnsErrorWhenThereIsOverbooking()
         {
-            var postRentalRequest = new RentalBindingModel
-            {
-                Units = 1
-            };
+            var postRentalResult = await _fixture.CreateRental(units: 1, preparationTimeInDays: 1);
 
-            ResourceIdDto postRentalResult;
-            using (var postRentalResponse = await _client.PostAsJsonAsync($"/api/v1/rentals", postRentalRequest))
-            {
-                Assert.True(postRentalResponse.IsSuccessStatusCode);
-                postRentalResult = await postRentalResponse.Content.ReadFromJsonAsync<ResourceIdDto>();
-            }
-
-            var postBooking1Request = new BookingBindingModel
+            var postBooking1Request = new BookingRequest
             {
                 RentalId = postRentalResult.Id,
                 Nights = 3,
@@ -84,7 +68,7 @@ namespace VacationRental.SystemTests
                 Assert.True(postBooking1Response.IsSuccessStatusCode);
             }
 
-            var postBooking2Request = new BookingBindingModel
+            var postBooking2Request = new BookingRequest
             {
                 RentalId = postRentalResult.Id,
                 Nights = 1,
@@ -96,6 +80,36 @@ namespace VacationRental.SystemTests
                 Assert.True(!postBooking2Response.IsSuccessStatusCode);
             }
 
+        }
+
+        [Fact]
+        public async Task GivenCompleteRequest_WhenPostBooking_ThenAPostReturnsErrorWhenThereIsOverbookingBecauseOfPreparation()
+        {
+            var postRentalResult = await _fixture.CreateRental(units: 1, preparationTimeInDays: 1);
+
+            var postBooking1Request = new BookingRequest
+            {
+                RentalId = postRentalResult.Id,
+                Nights = 1,
+                Start = new DateTime(2002, 01, 01)
+            };
+
+            using (var postBooking1Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking1Request))
+            {
+                Assert.True(postBooking1Response.IsSuccessStatusCode);
+            }
+
+            var postBooking2Request = new BookingRequest
+            {
+                RentalId = postRentalResult.Id,
+                Nights = 1,
+                Start = new DateTime(2002, 01, 02)
+            };
+
+            using (var postBooking2Response = await _client.PostAsJsonAsync($"/api/v1/bookings", postBooking2Request))
+            {
+                Assert.True(!postBooking2Response.IsSuccessStatusCode);
+            }
         }
     }
 }

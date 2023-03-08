@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
-using VacationRental.Application.Models;
+using VacationRental.Application.Models.Booking;
 using VacationRental.Domain.Repositories;
 
 namespace VacationRental.Application.CQRS.Queries.Booking

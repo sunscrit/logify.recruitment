@@ -8,10 +8,12 @@ namespace VacationRental.Application.CQRS.Commands.Rental
     public class AddRentalCommand : IRequest<ResourceIdDto>
     {
         public int Units { get; set; }
+        public int PreparationTimeInDays { get; set; }
 
-        public AddRentalCommand(int units)
+        public AddRentalCommand(int units, int preparetionTimeInDays)
         {
             Units = units;
+            PreparationTimeInDays = preparetionTimeInDays;
         }
     }
 
@@ -28,7 +30,9 @@ namespace VacationRental.Application.CQRS.Commands.Rental
         {
             var rental = await _rentalRepository.AddAsync(new RentalEntity
             {
-                Units = command.Units
+                Units = command.Units,
+                PreparationTimeInDays = command.PreparationTimeInDays
+
             });
             return new ResourceIdDto { Id = rental.Id };
         }

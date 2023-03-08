@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using VacationRental.Application.CQRS.Queries.Booking;
 using VacationRental.Application.CQRS.Queries.Rental;
-using VacationRental.Application.Models;
+using VacationRental.Application.Models.Calendar;
 
 namespace VacationRental.Api.Controllers
 {
@@ -19,7 +19,7 @@ namespace VacationRental.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<CalendarViewModel>> GetAsync(int rentalId, DateTime start, int nights)
+        public async Task<ActionResult<CalendarDto>> GetAsync(int rentalId, DateTime start, int nights)
         {
             if (nights < 0)
             {
@@ -34,7 +34,7 @@ namespace VacationRental.Api.Controllers
                 return NotFound("Rental not found");
             }
 
-            var result = new CalendarViewModel
+            var result = new CalendarDto
             {
                 RentalId = rentalId,
                 Dates = new List<CalendarDateViewModel>()
@@ -43,22 +43,31 @@ namespace VacationRental.Api.Controllers
             var getBookingsForRentalQuery = new GetBookingsForRentalQuery(rental.Id);
             var bookingsForRental = await _mediator.Send(getBookingsForRentalQuery);
 
+            var preparationTimeInDays = rental.PreparationTimeInDays;
+
             for (var i = 0; i < nights; i++)
             {
                 var date = new CalendarDateViewModel
                 {
                     Date = start.Date.AddDays(i),
-                    Bookings = new List<CalendarBookingEntity>()
+                    Bookings = new List<CalendarBookingViewModel>(),
+                    PreparationTimes = new List<PreparationTimeViewModel>()
                 };
 
                 foreach (var booking in bookingsForRental)
                 {
-                    if (booking.Start <= date.Date && booking.Start.AddDays(booking.Nights) > date.Date)
+                    var bookingEnd = booking.Start.AddDays(booking.Nights);
+                    var preparationEnd = booking.Start.AddDays(booking.Nights + preparationTimeInDays);
+                    var unitId = booking.Id % rental.Units + 1;
+                    if (booking.Start <= date.Date && bookingEnd > date.Date)
                     {
-                        date.Bookings.Add(new CalendarBookingEntity { Id = booking.Id });
+                        date.Bookings.Add(new CalendarBookingViewModel { Id = booking.Id, Unit = unitId });
+                    }
+                    else if (bookingEnd <= date.Date && preparationEnd > date.Date)
+                    {
+                        date.PreparationTimes.Add(new PreparationTimeViewModel { Unit = unitId });
                     }
                 }
-
                 result.Dates.Add(date);
             }
 
