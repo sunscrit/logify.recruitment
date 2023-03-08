@@ -2,7 +2,6 @@
 using System.Net.Http.Json;
 using VacationRental.Application.Models;
 using VacationRental.Application.Models.Booking;
-using VacationRental.Application.Models.Rental;
 using VacationRental.Domain.Entities;
 using Xunit;
 

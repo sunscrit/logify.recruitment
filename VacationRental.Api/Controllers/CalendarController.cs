@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using VacationRental.Application.CQRS.Queries.Booking;
 using VacationRental.Application.CQRS.Queries.Rental;
-using VacationRental.Application.Models.Booking;
 using VacationRental.Application.Models.Calendar;
 
 namespace VacationRental.Api.Controllers
